@@ -111,7 +111,16 @@ impl Display for Instruction {
                 reg2str(self.rs1.unwrap())
             ),
             InstFormat::IFormat => match self.opc {
-                OpcodeKind::BaseI(BaseIOpcode::JALR) => write!(
+                OpcodeKind::BaseI(
+                    BaseIOpcode::JALR
+                    | BaseIOpcode::LB
+                    | BaseIOpcode::LH
+                    | BaseIOpcode::LW
+                    | BaseIOpcode::LBU
+                    | BaseIOpcode::LHU
+                    | BaseIOpcode::LWU
+                    | BaseIOpcode::LD,
+                ) => write!(
                     f,
                     "{} {}, {}({})",
                     self.opc,
@@ -162,7 +171,7 @@ impl Display for Instruction {
                     self.imm.unwrap()
                 )
             }
-            InstFormat::UFormat | InstFormat::JFormat => {
+            InstFormat::UFormat => {
                 write!(
                     f,
                     "{} {}, {:#x}",
@@ -171,10 +180,7 @@ impl Display for Instruction {
                     self.imm.unwrap()
                 )
             }
-            InstFormat::CjFormat => {
-                write!(f, "{} {}", self.opc, self.imm.unwrap())
-            }
-            InstFormat::CiFormat => {
+            InstFormat::JFormat => {
                 write!(
                     f,
                     "{} {}, {}",
@@ -183,6 +189,29 @@ impl Display for Instruction {
                     self.imm.unwrap()
                 )
             }
+            InstFormat::CjFormat => {
+                write!(f, "{} {}", self.opc, self.imm.unwrap())
+            }
+            InstFormat::CiFormat => match self.opc {
+                OpcodeKind::C(COpcode::LUI) => {
+                    write!(
+                        f,
+                        "{} {}, {:#x}",
+                        self.opc,
+                        reg2str(self.rd.unwrap()),
+                        self.imm.unwrap() >> 12
+                    )
+                }
+                _ => {
+                    write!(
+                        f,
+                        "{} {}, {}",
+                        self.opc,
+                        reg2str(self.rd.unwrap()),
+                        self.imm.unwrap()
+                    )
+                }
+            },
             InstFormat::CrFormat => match self.opc {
                 OpcodeKind::C(COpcode::JR) | OpcodeKind::C(COpcode::JALR) => {
                     write!(f, "{} {}", self.opc, reg2str(self.rs1.unwrap()),)
