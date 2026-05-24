@@ -1,6 +1,7 @@
 //! Define instructions data structure.
 
 pub mod a_extension;
+pub mod b_extension;
 pub mod base_i;
 pub mod c_extension;
 pub mod m_extension;
@@ -14,6 +15,7 @@ pub mod zifencei_extension;
 use core::fmt::{self, Display, Formatter};
 
 use a_extension::AOpcode;
+use b_extension::BOpcode;
 use base_i::BaseIOpcode;
 use c_extension::COpcode;
 use m_extension::MOpcode;
@@ -83,26 +85,69 @@ impl Display for Instruction {
                     reg2str(self.rs1.unwrap()),
                 )
             }
-            InstFormat::ClFormat | InstFormat::ALrFormat | InstFormat::IFormat => write!(
-                f,
-                "{} {}, {}, {}",
-                self.opc,
-                reg2str(self.rd.unwrap()),
-                reg2str(self.rs1.unwrap()),
-                self.imm.unwrap()
-            ),
-            InstFormat::CsFormat | InstFormat::SFormat | InstFormat::BFormat => write!(
+            InstFormat::BExtShamtFormat => {
+                write!(
+                    f,
+                    "{}  {},{},{:#x}",
+                    self.opc,
+                    reg2str(self.rd.unwrap()),
+                    reg2str(self.rs1.unwrap()),
+                    self.imm.unwrap()
+                )
+            }
+            InstFormat::ClFormat => write!(
                 f,
                 "{} {}, {}({})",
                 self.opc,
-                reg2str(self.rs1.unwrap()),
+                reg2str(self.rd.unwrap()),
                 self.imm.unwrap(),
+                reg2str(self.rs1.unwrap())
+            ),
+            InstFormat::ALrFormat => write!(
+                f,
+                "{} {}, ({})",
+                self.opc,
+                reg2str(self.rd.unwrap()),
+                reg2str(self.rs1.unwrap())
+            ),
+            InstFormat::IFormat => match self.opc {
+                OpcodeKind::BaseI(BaseIOpcode::JALR) => write!(
+                    f,
+                    "{} {}, {}({})",
+                    self.opc,
+                    reg2str(self.rd.unwrap()),
+                    self.imm.unwrap(),
+                    reg2str(self.rs1.unwrap())
+                ),
+                _ => write!(
+                    f,
+                    "{} {}, {}, {}",
+                    self.opc,
+                    reg2str(self.rd.unwrap()),
+                    reg2str(self.rs1.unwrap()),
+                    self.imm.unwrap()
+                ),
+            },
+            InstFormat::CsFormat | InstFormat::SFormat => write!(
+                f,
+                "{} {}, {}({})",
+                self.opc,
                 reg2str(self.rs2.unwrap()),
+                self.imm.unwrap(),
+                reg2str(self.rs1.unwrap()),
+            ),
+            InstFormat::BFormat => write!(
+                f,
+                "{} {}, {}, {}",
+                self.opc,
+                reg2str(self.rs1.unwrap()),
+                reg2str(self.rs2.unwrap()),
+                self.imm.unwrap()
             ),
             InstFormat::CiwFormat => {
                 write!(
                     f,
-                    "{} {}, sp, {:x}",
+                    "{} {}, {}",
                     self.opc,
                     reg2str(self.rd.unwrap()),
                     self.imm.unwrap()
@@ -111,7 +156,7 @@ impl Display for Instruction {
             InstFormat::CssFormat => {
                 write!(
                     f,
-                    "{} {}, {}(sp)",
+                    "{} {}, {}",
                     self.opc,
                     reg2str(self.rs2.unwrap()),
                     self.imm.unwrap()
@@ -132,19 +177,15 @@ impl Display for Instruction {
             InstFormat::CiFormat => {
                 write!(
                     f,
-                    "{} {}, {}, {}",
+                    "{} {}, {}",
                     self.opc,
-                    reg2str(self.rd.unwrap()),
                     reg2str(self.rd.unwrap()),
                     self.imm.unwrap()
                 )
             }
             InstFormat::CrFormat => match self.opc {
-                OpcodeKind::C(COpcode::JR) => {
-                    write!(f, "{} zero, 0({})", self.opc, reg2str(self.rs1.unwrap()),)
-                }
-                OpcodeKind::C(COpcode::JALR) => {
-                    write!(f, "{} ra, 0({})", self.opc, reg2str(self.rs1.unwrap()),)
+                OpcodeKind::C(COpcode::JR) | OpcodeKind::C(COpcode::JALR) => {
+                    write!(f, "{} {}", self.opc, reg2str(self.rs1.unwrap()),)
                 }
                 OpcodeKind::C(COpcode::MV) => write!(
                     f,
@@ -155,9 +196,8 @@ impl Display for Instruction {
                 ),
                 OpcodeKind::C(COpcode::ADD) => write!(
                     f,
-                    "{} {}, {}, {}",
+                    "{} {}, {}",
                     self.opc,
-                    reg2str(self.rd.unwrap()),
                     reg2str(self.rd.unwrap()),
                     reg2str(self.rs2.unwrap())
                 ),
@@ -166,9 +206,8 @@ impl Display for Instruction {
             InstFormat::CaFormat => {
                 write!(
                     f,
-                    "{} {}, {}, {}",
+                    "{} {}, {}",
                     self.opc,
-                    reg2str(self.rd.unwrap()),
                     reg2str(self.rd.unwrap()),
                     reg2str(self.rs2.unwrap())
                 )
@@ -178,7 +217,7 @@ impl Display for Instruction {
                     f,
                     "{} {}, {}",
                     self.opc,
-                    self.rs1.unwrap(),
+                    reg2str(self.rs1.unwrap()),
                     self.imm.unwrap(),
                 )
             }
@@ -381,6 +420,12 @@ pub enum InstFormat {
     /// ```
     CsrUiFormat,
 
+    /// B-extension shamt format
+    /// ```ignore
+    /// bseti rd, rs1, shamt
+    /// ```
+    BExtShamtFormat,
+
     /// M-extension instruction format
     /// ```ignore
     /// mul rd, rs1, rs2
@@ -458,6 +503,8 @@ pub enum OpcodeKind {
     Zicntr(ZicntrOpcode),
     /// Privileged Instructions
     Priv(PrivOpcode),
+    /// Bit Manipulation Instructions
+    B(BOpcode),
 }
 
 impl Display for OpcodeKind {
@@ -473,6 +520,7 @@ impl Display for OpcodeKind {
             Self::Zicfiss(opc) => write!(f, "{opc}"),
             Self::Zicntr(opc) => write!(f, "{opc}"),
             Self::Priv(opc) => write!(f, "{opc}"),
+            Self::B(opc) => write!(f, "{opc}"),
         }
     }
 }
@@ -491,6 +539,7 @@ impl OpcodeKind {
             Self::Zicfiss(opc) => opc.get_format(),
             Self::Zicntr(opc) => opc.get_format(),
             Self::Priv(opc) => opc.get_format(),
+            Self::B(opc) => opc.get_format(),
         }
     }
 }

@@ -96,11 +96,11 @@ impl Opcode for COpcode {
             COpcode::SW | COpcode::SD => InstFormat::CsFormat,
 
             // Quadrant 1
-            COpcode::JAL | COpcode::J => InstFormat::CjFormat,
+            COpcode::JAL | COpcode::J | COpcode::ADDI16SP => InstFormat::CjFormat,
             COpcode::BEQZ | COpcode::ANDI | COpcode::SRLI | COpcode::SRAI | COpcode::BNEZ => {
                 InstFormat::CbFormat
             }
-            COpcode::LI | COpcode::ADDI | COpcode::ADDIW | COpcode::ADDI16SP | COpcode::LUI => {
+            COpcode::LI | COpcode::ADDI | COpcode::ADDIW | COpcode::LUI => {
                 InstFormat::CiFormat
             }
             COpcode::NOP => InstFormat::NoOperand,

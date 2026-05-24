@@ -54,6 +54,7 @@ impl Decode for u32 {
             Ok(Extensions::Priv) => Ok(OpcodeKind::Priv(priv_extension::bit_32::parse_opcode(
                 self,
             )?)),
+            Ok(Extensions::B) => Err(DecodingError::UnknownExtension),
             Ok(Extensions::C) => Err(DecodingError::Not32BitInst),
             Err(decoding_err) => Err(decoding_err),
         }
@@ -71,6 +72,7 @@ impl Decode for u32 {
             OpcodeKind::Zicboz(opc) => Ok(zicboz_extension::bit_32::parse_rd(self, opc)),
             OpcodeKind::Priv(opc) => Ok(priv_extension::bit_32::parse_rd(self, opc)),
             OpcodeKind::C(_) => Err(DecodingError::Not32BitInst),
+            OpcodeKind::B(_) => Err(DecodingError::InvalidOpcode),
         }
     }
 
@@ -86,6 +88,7 @@ impl Decode for u32 {
             OpcodeKind::Zicboz(opc) => Ok(zicboz_extension::bit_32::parse_rs1(self, opc)),
             OpcodeKind::Priv(opc) => Ok(priv_extension::bit_32::parse_rs1(self, opc)),
             OpcodeKind::C(_) => Err(DecodingError::Not32BitInst),
+            OpcodeKind::B(_) => Err(DecodingError::InvalidOpcode),
         }
     }
 
@@ -101,6 +104,7 @@ impl Decode for u32 {
             OpcodeKind::Zicboz(opc) => Ok(zicboz_extension::bit_32::parse_rs2(self, opc)),
             OpcodeKind::Priv(opc) => Ok(priv_extension::bit_32::parse_rs2(self, opc)),
             OpcodeKind::C(_) => Err(DecodingError::Not32BitInst),
+            OpcodeKind::B(_) => Err(DecodingError::InvalidOpcode),
         }
     }
 
@@ -116,6 +120,7 @@ impl Decode for u32 {
             OpcodeKind::Zicboz(opc) => Ok(zicboz_extension::bit_32::parse_imm(self, opc)),
             OpcodeKind::Priv(opc) => Ok(priv_extension::bit_32::parse_imm(self, opc)),
             OpcodeKind::C(_) => Err(DecodingError::Not32BitInst),
+            OpcodeKind::B(_) => Err(DecodingError::InvalidOpcode),
         }
     }
 }

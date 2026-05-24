@@ -4,6 +4,7 @@ mod inst_16;
 mod inst_32;
 
 mod a_extension;
+pub mod b_extension;
 mod base_i;
 mod c_extension;
 mod m_extension;
@@ -115,6 +116,22 @@ pub trait Decode {
     /// # Errors
     /// It will throws an error if immediate is invalid.
     fn parse_imm(self, opkind: &OpcodeKind, isa: Isa) -> Result<Option<i32>, DecodingError>;
+}
+
+pub trait DecodeExt: Decode {
+    fn decode_ext(&self, isa: Isa) -> Result<Instruction, DecodingError>;
+}
+
+impl DecodeExt for u32 {
+    fn decode_ext(&self, isa: Isa) -> Result<Instruction, DecodingError> {
+        self.decode(isa).or_else(|_| crate::decode::b_extension::decode_b_ext(*self))
+    }
+}
+
+impl DecodeExt for u16 {
+    fn decode_ext(&self, isa: Isa) -> Result<Instruction, DecodingError> {
+        self.decode(isa)
+    }
 }
 
 /// A trait to help decoding.

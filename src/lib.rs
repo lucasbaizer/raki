@@ -30,12 +30,13 @@ mod decode;
 mod instruction;
 
 // re-export
-pub use crate::decode::{Decode, DecodingError};
+pub use crate::decode::{Decode, DecodeExt, DecodingError};
 pub use crate::instruction::{
-    a_extension::AOpcode, base_i::BaseIOpcode, c_extension::COpcode, m_extension::MOpcode,
-    priv_extension::PrivOpcode, zicboz_extension::ZicbozOpcode, zicfiss_extension::ZicfissOpcode,
-    zicntr_extension::ZicntrOpcode, zicsr_extension::ZicsrOpcode,
-    zifencei_extension::ZifenceiOpcode, InstFormat, Instruction, OpcodeKind,
+    a_extension::AOpcode, b_extension::BOpcode, base_i::BaseIOpcode, c_extension::COpcode,
+    m_extension::MOpcode, priv_extension::PrivOpcode, zicboz_extension::ZicbozOpcode,
+    zicfiss_extension::ZicfissOpcode, zicntr_extension::ZicntrOpcode,
+    zicsr_extension::ZicsrOpcode, zifencei_extension::ZifenceiOpcode, InstFormat,
+    Instruction, OpcodeKind,
 };
 
 /// Target isa.
@@ -70,6 +71,8 @@ enum Extensions {
     Zicntr,
     /// Privileged Instructions
     Priv,
+    /// Bit Manipulation Instructions
+    B,
 }
 
 impl TryFrom<usize> for Instruction {
@@ -78,11 +81,11 @@ impl TryFrom<usize> for Instruction {
         if inst & 0b11 == 0b11 {
             u32::try_from(inst)
                 .expect("Truncation of usize to u32 failed.")
-                .decode(Isa::Rv64)
+                .decode_ext(Isa::Rv64)
         } else {
             u16::try_from(inst)
                 .expect("Truncation of usize to u16 failed.")
-                .decode(Isa::Rv64)
+                .decode_ext(Isa::Rv64)
         }
     }
 }
